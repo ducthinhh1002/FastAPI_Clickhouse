@@ -19,7 +19,7 @@ class ClickHouseClient:
             except Exception as e:
                 if i == max_retries - 1:
                     raise
-                time.sleep(20)  # Tăng lên 20 giây chờ giữa các lần thử
+                time.sleep(20)  
                 print(f"Retry {i+1}/{max_retries} to connect to ClickHouse: {str(e)}")
 
     def _init_table(self):
