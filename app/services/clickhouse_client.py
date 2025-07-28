@@ -68,5 +68,3 @@ class ClickHouseClient:
     def _get_next_id(self):
         result = self.client.execute("SELECT max(id) FROM articles")
         return (result[0][0] + 1) if result[0][0] else 1
-
-clickhouse_client = ClickHouseClient()
