@@ -1,5 +1,6 @@
 from clickhouse_driver import Client
 from app.core.config import settings
+from datetime import datetime
 import time
 
 class ClickHouseClient:
@@ -36,7 +37,7 @@ class ClickHouseClient:
     def insert_article(self, title: str, content: str):
         return self.client.execute(
             "INSERT INTO articles (id, title, content, created_at) VALUES",
-            [(self._get_next_id(), title, content, 'now()')]
+            [(self._get_next_id(), title, content, datetime.utcnow())]
         )
 
     def get_articles(self, skip: int = 0, limit: int = 10):
