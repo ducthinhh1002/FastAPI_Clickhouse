@@ -44,11 +44,15 @@ def upload_table_to_clickhouse(
     ch_client: Client,
     dest_table: str,
     batch_size: int = 100000,
+    drop_table: bool = False,
 ):
     columns = table.column_names
     schema = ", ".join(
         f"{name} {arrow_to_clickhouse(table.schema[i].type)}" for i, name in enumerate(columns)
     )
+    if drop_table:
+        ch_client.execute(f"DROP TABLE IF EXISTS {dest_table}")
+
     create_sql = f"CREATE TABLE IF NOT EXISTS {dest_table} ({schema}) ENGINE = MergeTree() ORDER BY tuple()"
     ch_client.execute(create_sql)
     insert_sql = f"INSERT INTO {dest_table} ({', '.join(columns)}) VALUES"
@@ -74,6 +78,7 @@ def main():
     parser.add_argument("--ch-password", default=os.environ.get("CLICKHOUSE_PASSWORD", ""))
     parser.add_argument("--ch-db", default=os.environ.get("CLICKHOUSE_DATABASE", "default"))
     parser.add_argument("--batch-size", type=int, default=100000, help="Rows per insert batch")
+    parser.add_argument("--drop-table", action="store_true", help="Drop destination table before loading")
 
 
     args = parser.parse_args()
@@ -94,7 +99,13 @@ def main():
         password=args.ch_password,
         database=args.ch_db,
     )
-    upload_table_to_clickhouse(table, ch_client, args.table, batch_size=args.batch_size)
+    upload_table_to_clickhouse(
+        table,
+        ch_client,
+        args.table,
+        batch_size=args.batch_size,
+        drop_table=args.drop_table,
+    )
     elapsed = time.time() - start
     print(f"Uploaded {table.num_rows} rows in {elapsed:.2f} seconds")
 
