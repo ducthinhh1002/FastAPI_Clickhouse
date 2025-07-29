@@ -28,6 +28,8 @@ def read_parquet_from_minio(
     bucket: str,
     obj: str,
 ) -> pa.Table:
+=======
+def read_parquet_from_minio(endpoint: str, access_key: str, secret_key: str, bucket: str, obj: str) -> pq.Table:
     client = Minio(endpoint, access_key=access_key, secret_key=secret_key, secure=False)
     response = client.get_object(bucket, obj)
     try:
@@ -55,6 +57,9 @@ def upload_table_to_clickhouse(
     for batch in table.to_batches(batch_size):
         rows = list(zip(*[batch.column(i).to_pylist() for i in range(batch.num_columns)]))
         ch_client.execute(insert_sql, rows)
+    rows = list(zip(*[table.column(col).to_pylist() for col in columns]))
+    insert_sql = f"INSERT INTO {dest_table} ({', '.join(columns)}) VALUES"
+    ch_client.execute(insert_sql, rows)
 
 
 def main():
@@ -71,6 +76,7 @@ def main():
     parser.add_argument("--ch-password", default=os.environ.get("CLICKHOUSE_PASSWORD", ""))
     parser.add_argument("--ch-db", default=os.environ.get("CLICKHOUSE_DATABASE", "default"))
     parser.add_argument("--batch-size", type=int, default=100000, help="Rows per insert batch")
+=======
 
     args = parser.parse_args()
 
@@ -91,6 +97,8 @@ def main():
         database=args.ch_db,
     )
     upload_table_to_clickhouse(table, ch_client, args.table, batch_size=args.batch_size)
+=======
+    upload_table_to_clickhouse(table, ch_client, args.table)
     elapsed = time.time() - start
     print(f"Uploaded {table.num_rows} rows in {elapsed:.2f} seconds")
 
