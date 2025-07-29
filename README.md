@@ -2,7 +2,7 @@
 
 ## Upload Parquet from MinIO
 
-The `scripts/upload_parquet_minio.py` helper downloads a Parquet file from MinIO and uploads it into ClickHouse in batches, timing the process. Configure MinIO and ClickHouse credentials via command line flags or environment variables.
+The `scripts/upload_parquet_minio.py` helper downloads a Parquet file from MinIO and uploads it into ClickHouse in batches, timing the process. Configure MinIO and ClickHouse credentials via command line flags or environment variables. Use `--drop-table` to recreate the table before loading.
 
 Example usage:
 
@@ -11,7 +11,8 @@ python scripts/upload_parquet_minio.py \
   --bucket mybucket \
   --object data.parquet \
   --table parquet_data \
-  --batch-size 100000
+  --batch-size 100000 \
+  --drop-table
 ```
 
 ## Generating Test Data
