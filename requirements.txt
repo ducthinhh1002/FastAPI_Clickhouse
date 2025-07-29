@@ -5,3 +5,6 @@ clickhouse-driver==0.2.9
 python-jose==3.3.0 
 pydantic-settings==2.5.2
 python-multipart==0.0.9
+minio==7.2.5
+pyarrow==15.0.2
+numpy==1.26.4
