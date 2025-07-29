@@ -3,8 +3,6 @@
 ## Upload Parquet from MinIO
 
 The `scripts/upload_parquet_minio.py` helper downloads a Parquet file from MinIO and uploads it into ClickHouse in batches, timing the process. Configure MinIO and ClickHouse credentials via command line flags or environment variables.
-=======
-The `scripts/upload_parquet_minio.py` helper downloads a Parquet file from MinIO and uploads it into ClickHouse, timing the process. Configure MinIO and ClickHouse credentials via command line flags or environment variables.
 
 Example usage:
 
@@ -32,5 +30,4 @@ The included `docker-compose.yml` spins up ClickHouse, MinIO and the FastAPI app
 docker compose up --build -d
 ```
 
-MinIO will be available at `http://localhost:9001` with both user and password set to `minioadmin`.
-=======
+MinIO will be available at `http://localhost:9001` with both user and password set to `minioadmin`. The S3 API listens on `localhost:9002`.
