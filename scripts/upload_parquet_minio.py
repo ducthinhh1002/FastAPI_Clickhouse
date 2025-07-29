@@ -75,6 +75,7 @@ def main():
     parser.add_argument("--ch-db", default=os.environ.get("CLICKHOUSE_DATABASE", "default"))
     parser.add_argument("--batch-size", type=int, default=100000, help="Rows per insert batch")
 
+
     args = parser.parse_args()
 
     start = time.time()
