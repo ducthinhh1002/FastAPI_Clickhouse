@@ -5,6 +5,7 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
+    restart: always
     depends_on:
       clickhouse:
         condition: service_healthy
@@ -27,6 +28,7 @@ services:
     ports:
       - "9002:9000"
       - "9001:9001"
+    restart: always
     volumes:
       - minio-data:/data
 
@@ -35,6 +37,7 @@ services:
     ports:
       - "8123:8123"
       - "9000:9000"
+    restart: always
     environment:
       - CLICKHOUSE_USER=admin
       - CLICKHOUSE_PASSWORD=password

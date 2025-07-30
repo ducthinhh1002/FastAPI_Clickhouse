@@ -13,3 +13,16 @@ python scripts/upload_parquet_minio.py --bucket test --object data10m.parquet --
 ```bash
 python scripts/generate_parquet.py --rows 10000000 --cols 10 --output data10m.parquet
 ```
+
+## Check downtime: 
+```bash
+while ($true) {
+    try {
+        Invoke-WebRequest -Uri http://localhost:8000/ -UseBasicParsing -ErrorAction Stop > $null
+        Write-Host "up"
+    } catch {
+        Write-Host "down"
+    }
+    Start-Sleep -Seconds 1
+}
+```
