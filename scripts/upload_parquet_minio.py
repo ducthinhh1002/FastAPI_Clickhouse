@@ -6,7 +6,7 @@ import time
 from minio import Minio
 import pyarrow as pa
 import pyarrow.parquet as pq
-from clickhouse_driver import Client
+from clickhouse_connect import get_client
 
 
 def arrow_to_clickhouse(pa_type: pa.DataType) -> str:
@@ -41,7 +41,7 @@ def read_parquet_from_minio(
 
 def upload_table_to_clickhouse(
     table: pa.Table,
-    ch_client: Client,
+    ch_client,
     dest_table: str,
     batch_size: int = 100000,
     drop_table: bool = False,
@@ -51,14 +51,13 @@ def upload_table_to_clickhouse(
         f"{name} {arrow_to_clickhouse(table.schema[i].type)}" for i, name in enumerate(columns)
     )
     if drop_table:
-        ch_client.execute(f"DROP TABLE IF EXISTS {dest_table}")
+        ch_client.command(f"DROP TABLE IF EXISTS {dest_table}")
 
     create_sql = f"CREATE TABLE IF NOT EXISTS {dest_table} ({schema}) ENGINE = MergeTree() ORDER BY tuple()"
-    ch_client.execute(create_sql)
-    insert_sql = f"INSERT INTO {dest_table} ({', '.join(columns)}) VALUES"
+    ch_client.command(create_sql)
     for batch in table.to_batches(batch_size):
         rows = list(zip(*[batch.column(i).to_pylist() for i in range(batch.num_columns)]))
-        ch_client.execute(insert_sql, rows)
+        ch_client.insert(dest_table, rows, column_names=columns)
 
 
 def main():
@@ -92,10 +91,10 @@ def main():
         obj=args.object,
     )
 
-    ch_client = Client(
+    ch_client = get_client(
         host=args.ch_host,
         port=args.ch_port,
-        user=args.ch_user,
+        username=args.ch_user,
         password=args.ch_password,
         database=args.ch_db,
     )
