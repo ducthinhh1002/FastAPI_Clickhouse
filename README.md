@@ -4,6 +4,8 @@
 
 The `scripts/upload_parquet_minio.py` helper downloads a Parquet file from MinIO and uploads it into ClickHouse in batches, timing the process. Configure MinIO and ClickHouse credentials via command line flags or environment variables. Use `--drop-table` to recreate the table before loading.
 
+The script connects over ClickHouse's HTTP interface. By default this listens on port `8123`, so be sure to specify that port if your server uses the standard configuration.
+
 Example usage:
 
 ```bash
@@ -12,6 +14,7 @@ python scripts/upload_parquet_minio.py \
   --object data.parquet \
   --table parquet_data \
   --batch-size 100000 \
+  --ch-port 8123 \
   --drop-table
 ```
 
