@@ -5,7 +5,7 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     CLICKHOUSE_HOST: str = "clickhouse"
-    CLICKHOUSE_PORT: int = 9000
+    CLICKHOUSE_PORT: int = 8123
     CLICKHOUSE_USER: str = "admin"
     CLICKHOUSE_PASSWORD: str = "password"
     CLICKHOUSE_DATABASE: str = "default"

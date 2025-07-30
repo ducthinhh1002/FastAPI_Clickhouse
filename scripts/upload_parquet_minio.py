@@ -72,7 +72,12 @@ def main():
     parser.add_argument("--minio-access", default=os.environ.get("MINIO_ACCESS_KEY", "minioadmin"))
     parser.add_argument("--minio-secret", default=os.environ.get("MINIO_SECRET_KEY", "minioadmin"))
     parser.add_argument("--ch-host", default=os.environ.get("CLICKHOUSE_HOST", "localhost"))
-    parser.add_argument("--ch-port", type=int, default=int(os.environ.get("CLICKHOUSE_PORT", 9000)))
+    parser.add_argument(
+        "--ch-port",
+        type=int,
+        default=int(os.environ.get("CLICKHOUSE_PORT", 8123)),
+        help="ClickHouse HTTP port (default 8123)",
+    )
     parser.add_argument("--ch-user", default=os.environ.get("CLICKHOUSE_USER", "default"))
     parser.add_argument("--ch-password", default=os.environ.get("CLICKHOUSE_PASSWORD", ""))
     parser.add_argument("--ch-db", default=os.environ.get("CLICKHOUSE_DATABASE", "default"))
