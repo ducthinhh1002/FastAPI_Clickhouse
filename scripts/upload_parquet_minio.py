@@ -56,8 +56,7 @@ def upload_table_to_clickhouse(
     create_sql = f"CREATE TABLE IF NOT EXISTS {dest_table} ({schema}) ENGINE = MergeTree() ORDER BY tuple()"
     ch_client.command(create_sql)
     for batch in table.to_batches(batch_size):
-        rows = list(zip(*[batch.column(i).to_pylist() for i in range(batch.num_columns)]))
-        ch_client.insert(dest_table, rows, column_names=columns)
+        ch_client.insert(dest_table, batch.to_pylist(), column_names=columns)
 
 
 def main():
