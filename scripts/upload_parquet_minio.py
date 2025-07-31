@@ -1,7 +1,7 @@
 import argparse
-import io
 import os
 import time
+import tempfile
 
 from minio import Minio
 import pyarrow as pa
@@ -21,22 +21,37 @@ def arrow_to_clickhouse(pa_type: pa.DataType) -> str:
     return "String"
 
 
-def read_parquet_from_minio(
+def upload_parquet_from_minio(
     endpoint: str,
     access_key: str,
     secret_key: str,
     bucket: str,
     obj: str,
-) -> pa.Table:
+    ch_client,
+    dest_table: str,
+    batch_size: int = 100000,
+    drop_table: bool = False,
+) -> int:
     client = Minio(endpoint, access_key=access_key, secret_key=secret_key, secure=False)
-    response = client.get_object(bucket, obj)
-    try:
-        data = response.read()
-    finally:
-        response.close()
-        response.release_conn()
-    buffer = io.BytesIO(data)
-    return pq.read_table(buffer)
+    with tempfile.NamedTemporaryFile() as tmp:
+        client.fget_object(bucket, obj, tmp.name)
+        pq_file = pq.ParquetFile(tmp.name)
+        columns = pq_file.schema_arrow.names
+        schema = ", ".join(
+            f"{name} {arrow_to_clickhouse(pq_file.schema_arrow.field(name).type)}" for name in columns
+        )
+        if drop_table:
+            ch_client.command(f"DROP TABLE IF EXISTS {dest_table}")
+        create_sql = f"CREATE TABLE IF NOT EXISTS {dest_table} ({schema}) ENGINE = MergeTree() ORDER BY tuple()"
+        ch_client.command(create_sql)
+
+        total_rows = 0
+        for batch in pq_file.iter_batches(batch_size=batch_size):
+            table = pa.Table.from_batches([batch])
+            ch_client.insert_arrow(dest_table, table)
+            total_rows += table.num_rows
+
+        return total_rows
 
 
 def upload_table_to_clickhouse(
@@ -56,8 +71,7 @@ def upload_table_to_clickhouse(
     create_sql = f"CREATE TABLE IF NOT EXISTS {dest_table} ({schema}) ENGINE = MergeTree() ORDER BY tuple()"
     ch_client.command(create_sql)
     for batch in table.to_batches(batch_size):
-        rows = [list(row[c] for c in columns) for row in batch.to_pylist()]
-        ch_client.insert(dest_table, rows, column_names=columns)
+        ch_client.insert_arrow(dest_table, pa.Table.from_batches([batch]))
 
 
 def main():
@@ -88,14 +102,6 @@ def main():
     args = parser.parse_args()
 
     start = time.time()
-    table = read_parquet_from_minio(
-        endpoint=args.minio_endpoint,
-        access_key=args.minio_access,
-        secret_key=args.minio_secret,
-        bucket=args.bucket,
-        obj=args.object,
-    )
-
     ch_client = get_client(
         host=args.ch_host,
         port=args.ch_port,
@@ -103,15 +109,19 @@ def main():
         password=args.ch_password,
         database=args.ch_db,
     )
-    upload_table_to_clickhouse(
-        table,
-        ch_client,
-        args.table,
+    rows = upload_parquet_from_minio(
+        endpoint=args.minio_endpoint,
+        access_key=args.minio_access,
+        secret_key=args.minio_secret,
+        bucket=args.bucket,
+        obj=args.object,
+        ch_client=ch_client,
+        dest_table=args.table,
         batch_size=args.batch_size,
         drop_table=args.drop_table,
     )
     elapsed = time.time() - start
-    print(f"Uploaded {table.num_rows} rows in {elapsed:.2f} seconds")
+    print(f"Uploaded {rows} rows in {elapsed:.2f} seconds")
 
 
 if __name__ == "__main__":

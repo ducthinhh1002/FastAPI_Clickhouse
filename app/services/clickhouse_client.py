@@ -4,7 +4,8 @@ import time
 
 class ClickHouseClient:
     def __init__(self):
-        max_retries = 20
+        max_retries = 5
+        delay = 1
         for i in range(max_retries):
             try:
                 self.client = get_client(
@@ -18,6 +19,7 @@ class ClickHouseClient:
             except Exception as e:
                 if i == max_retries - 1:
                     raise
-                time.sleep(20)
                 print(f"Retry {i+1}/{max_retries} to connect to ClickHouse: {e}")
+                time.sleep(delay)
+                delay = min(delay * 2, 20)
 
