@@ -1,25 +1,23 @@
 from clickhouse_connect import get_client
 from app.core.config import settings
-import time
+import backoff
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class ClickHouseClient:
     def __init__(self):
-        max_retries = 5
-        delay = 1
-        for i in range(max_retries):
-            try:
-                self.client = get_client(
-                    host=settings.CLICKHOUSE_HOST,
-                    port=settings.CLICKHOUSE_PORT,
-                    username=settings.CLICKHOUSE_USER,
-                    password=settings.CLICKHOUSE_PASSWORD,
-                    database=settings.CLICKHOUSE_DATABASE,
-                )
-                break
-            except Exception as e:
-                if i == max_retries - 1:
-                    raise
-                print(f"Retry {i+1}/{max_retries} to connect to ClickHouse: {e}")
-                time.sleep(delay)
-                delay = min(delay * 2, 20)
+        self.client = self._connect()
+
+    @backoff.on_exception(backoff.expo, Exception, max_time=20, jitter=None)
+    def _connect(self):
+        logger.info("Connecting to ClickHouse")
+        return get_client(
+            host=settings.CLICKHOUSE_HOST,
+            port=settings.CLICKHOUSE_PORT,
+            username=settings.CLICKHOUSE_USER,
+            password=settings.CLICKHOUSE_PASSWORD,
+            database=settings.CLICKHOUSE_DATABASE,
+        )
 
