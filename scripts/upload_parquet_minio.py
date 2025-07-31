@@ -1,7 +1,7 @@
 import argparse
 import os
 import time
-import tempfile
+import io
 
 from minio import Minio
 import pyarrow as pa
@@ -10,14 +10,15 @@ from clickhouse_connect import get_client
 
 
 def arrow_to_clickhouse(pa_type: pa.DataType) -> str:
-    if pa.types.is_integer(pa_type):
-        return "Int64"
-    if pa.types.is_floating(pa_type):
-        return "Float64"
-    if pa.types.is_boolean(pa_type):
-        return "UInt8"
-    if pa.types.is_timestamp(pa_type):
-        return "DateTime"
+    mapping = {
+        pa.types.is_integer: "Int64",
+        pa.types.is_floating: "Float64",
+        pa.types.is_boolean: "UInt8",
+        pa.types.is_timestamp: "DateTime",
+    }
+    for check, ch_type in mapping.items():
+        if check(pa_type):
+            return ch_type
     return "String"
 
 
@@ -33,25 +34,28 @@ def upload_parquet_from_minio(
     drop_table: bool = False,
 ) -> int:
     client = Minio(endpoint, access_key=access_key, secret_key=secret_key, secure=False)
-    with tempfile.NamedTemporaryFile() as tmp:
-        client.fget_object(bucket, obj, tmp.name)
-        pq_file = pq.ParquetFile(tmp.name)
-        columns = pq_file.schema_arrow.names
-        schema = ", ".join(
-            f"{name} {arrow_to_clickhouse(pq_file.schema_arrow.field(name).type)}" for name in columns
-        )
-        if drop_table:
-            ch_client.command(f"DROP TABLE IF EXISTS {dest_table}")
-        create_sql = f"CREATE TABLE IF NOT EXISTS {dest_table} ({schema}) ENGINE = MergeTree() ORDER BY tuple()"
-        ch_client.command(create_sql)
+    response = client.get_object(bucket, obj)
+    buffer = io.BytesIO()
+    for chunk in response.stream(32 * 1024):
+        buffer.write(chunk)
+    buffer.seek(0)
+    pq_file = pq.ParquetFile(buffer)
+    columns = pq_file.schema_arrow.names
+    schema = ", ".join(
+        f"{name} {arrow_to_clickhouse(pq_file.schema_arrow.field(name).type)}" for name in columns
+    )
+    if drop_table:
+        ch_client.command(f"DROP TABLE IF EXISTS {dest_table}")
+    create_sql = f"CREATE TABLE IF NOT EXISTS {dest_table} ({schema}) ENGINE = MergeTree() ORDER BY tuple()"
+    ch_client.command(create_sql)
 
-        total_rows = 0
-        for batch in pq_file.iter_batches(batch_size=batch_size):
-            table = pa.Table.from_batches([batch])
-            ch_client.insert_arrow(dest_table, table)
-            total_rows += table.num_rows
+    total_rows = 0
+    for batch in pq_file.iter_batches(batch_size=batch_size):
+        table = pa.Table.from_batches([batch])
+        ch_client.insert_arrow(dest_table, table)
+        total_rows += table.num_rows
 
-        return total_rows
+    return total_rows
 
 
 def upload_table_to_clickhouse(
