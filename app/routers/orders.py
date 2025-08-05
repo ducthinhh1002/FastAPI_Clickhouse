@@ -12,17 +12,29 @@ router = APIRouter(prefix="/orders", tags=["orders"])
 
 @router.post("/")
 async def create_order(order: Order, ch: ClickHouseClient = Depends(get_ch)):
-    ch.command(
-        f"INSERT INTO fact_orders (order_id, user_id, product_id, quantity, total) VALUES ({order.order_id}, {order.user_id}, {order.product_id}, {order.quantity}, {order.total})"
+    sql = (
+        "INSERT INTO fact_orders (order_id, user_id, product_id, quantity, total) "
+        "VALUES ({order_id:UInt64}, {user_id:UInt64}, {product_id:UInt64}, {quantity:UInt32}, {total:Float64})"
     )
+    params = {
+        "order_id": order.order_id,
+        "user_id": order.user_id,
+        "product_id": order.product_id,
+        "quantity": order.quantity,
+        "total": order.total,
+    }
+    ch.client.command(sql, parameters=params)
     return {"status": "ok"}
 
 
 @router.get("/{order_id}", response_model=Order)
 async def read_order(order_id: int, ch: ClickHouseClient = Depends(get_ch)):
-    result = ch.query(
-        f"SELECT order_id, user_id, product_id, quantity, total, order_date FROM fact_orders WHERE order_id = {order_id}"
+    sql = (
+        "SELECT order_id, user_id, product_id, quantity, total, order_date "
+        "FROM fact_orders WHERE order_id = {order_id:UInt64}"
     )
+    params = {"order_id": order_id}
+    result = ch.client.query(sql, parameters=params)
     rows = result.result_rows
     if not rows:
         raise HTTPException(status_code=404, detail="Order not found")
@@ -39,13 +51,24 @@ async def read_order(order_id: int, ch: ClickHouseClient = Depends(get_ch)):
 
 @router.put("/{order_id}")
 async def update_order(order_id: int, order: Order, ch: ClickHouseClient = Depends(get_ch)):
-    ch.command(
-        f"ALTER TABLE fact_orders UPDATE user_id={order.user_id}, product_id={order.product_id}, quantity={order.quantity}, total={order.total} WHERE order_id={order_id}"
+    sql = (
+        "ALTER TABLE fact_orders UPDATE user_id={user_id:UInt64}, product_id={product_id:UInt64}, "
+        "quantity={quantity:UInt32}, total={total:Float64} WHERE order_id={order_id:UInt64}"
     )
+    params = {
+        "user_id": order.user_id,
+        "product_id": order.product_id,
+        "quantity": order.quantity,
+        "total": order.total,
+        "order_id": order_id,
+    }
+    ch.client.command(sql, parameters=params)
     return {"status": "ok"}
 
 
 @router.delete("/{order_id}")
 async def delete_order(order_id: int, ch: ClickHouseClient = Depends(get_ch)):
-    ch.command(f"ALTER TABLE fact_orders DELETE WHERE order_id={order_id}")
+    sql = "ALTER TABLE fact_orders DELETE WHERE order_id={order_id:UInt64}"
+    params = {"order_id": order_id}
+    ch.client.command(sql, parameters=params)
     return {"status": "ok"}
