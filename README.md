@@ -38,19 +38,31 @@ API hỗ trợ thao tác dữ liệu ClickHouse thông qua các bảng:
 ### Ví dụ gọi API
 
 Tạo user mới:
-
 ```bash
-curl -X POST http://localhost:8000/users/ \
-  -H "Content-Type: application/json" \
-  -d '{"id":1,"name":"Alice","email":"alice@example.com"}'
+Invoke-RestMethod -Uri http://localhost:8000/users/ `
+  -Method Post -ContentType 'application/json' `
+  -Body '{"id":1,"name":"Alice","email":"alice@example.com"}'
 ```
-
-Tạo product và order tương tự với `/products/` và `/orders/`.
-
+Tạo product mới:
+```bash
+Invoke-RestMethod -Uri http://localhost:8000/products/ `
+  -Method POST `
+  -ContentType "application/json" `
+  -Body '{"id":1,"name":"Book"}'
+```
+Tạo đơn hàng mới:
+```bash
+Invoke-RestMethod -Uri http://localhost:8000/orders/ `
+  -Method POST `
+  -ContentType "application/json" `
+  -Body '{"order_id":1,"user_id":10,"product_id":5,"quantity":2,"total":39.98}'
+```
 Lấy thông tin đơn hàng:
 
 ```bash
-curl http://localhost:8000/orders/1
+Invoke-RestMethod -Uri "http://localhost:8000/orders/1" `
+  -Method GET `
+  -ContentType "application/json"
 ```
 
 ### Query tổng hợp từ ClickHouse
