@@ -43,12 +43,48 @@ Invoke-RestMethod -Uri http://localhost:8000/users/ `
   -Method Post -ContentType 'application/json' `
   -Body '{"id":1,"name":"Alice","email":"alice@example.com"}'
 ```
+Lấy thông tin user:
+```bash
+Invoke-RestMethod -Uri "http://localhost:8000/users/1" `
+  -Method GET `
+  -ContentType "application/json"
+```
+Cập nhật user:
+```bash
+Invoke-RestMethod -Uri http://localhost:8000/users/1 `
+  -Method PUT -ContentType 'application/json' `
+  -Body '{"id":1,"name":"Alice Updated","email":"alice_new@example.com"}'
+```
+Xóa user:
+```bash
+Invoke-RestMethod -Uri "http://localhost:8000/users/1" `
+  -Method DELETE `
+  -ContentType "application/json"
+```
 Tạo product mới:
 ```bash
 Invoke-RestMethod -Uri http://localhost:8000/products/ `
   -Method POST `
   -ContentType "application/json" `
   -Body '{"id":3,"name":"Book"}'
+```
+Lấy thông tin product:
+```bash
+Invoke-RestMethod -Uri "http://localhost:8000/products/3" `
+  -Method GET `
+  -ContentType "application/json"
+```
+Cập nhật product:
+```bash
+Invoke-RestMethod -Uri http://localhost:8000/products/3 `
+  -Method PUT -ContentType 'application/json' `
+  -Body '{"id":3,"name":"Book Updated"}'
+```
+Xóa product:
+```bash
+Invoke-RestMethod -Uri "http://localhost:8000/products/3" `
+  -Method DELETE `
+  -ContentType "application/json"
 ```
 Tạo đơn hàng mới:
 ```bash
@@ -61,6 +97,18 @@ Lấy thông tin đơn hàng:
 ```bash
 Invoke-RestMethod -Uri "http://localhost:8000/orders/1" `
   -Method GET `
+  -ContentType "application/json"
+```
+Cập nhật đơn hàng:
+```bash
+Invoke-RestMethod -Uri http://localhost:8000/orders/1 `
+  -Method PUT -ContentType 'application/json' `
+  -Body '{"order_id":1,"user_id":1,"product_id":3,"quantity":10,"total":80}'
+```
+Xóa đơn hàng:
+```bash
+Invoke-RestMethod -Uri "http://localhost:8000/orders/1" `
+  -Method DELETE `
   -ContentType "application/json"
 ```
 ### Query tổng hợp từ ClickHouse
