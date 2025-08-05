@@ -48,32 +48,29 @@ Tạo product mới:
 Invoke-RestMethod -Uri http://localhost:8000/products/ `
   -Method POST `
   -ContentType "application/json" `
-  -Body '{"id":1,"name":"Book"}'
+  -Body '{"id":3,"name":"Book"}'
 ```
 Tạo đơn hàng mới:
 ```bash
 Invoke-RestMethod -Uri http://localhost:8000/orders/ `
   -Method POST `
   -ContentType "application/json" `
-  -Body '{"order_id":1,"user_id":10,"product_id":5,"quantity":2,"total":39.98}'
+  -Body '{"order_id":2,"user_id":1,"product_id":3,"quantity":5,"total":40}'
 ```
 Lấy thông tin đơn hàng:
-
 ```bash
 Invoke-RestMethod -Uri "http://localhost:8000/orders/1" `
   -Method GET `
   -ContentType "application/json"
 ```
-
 ### Query tổng hợp từ ClickHouse
 
 Sau khi đã có dữ liệu, có thể truy vấn trực tiếp trong ClickHouse:
 
 ```sql
-SELECT o.order_id, u.name AS user_name, p.name AS product_name, o.quantity, o.total
+SELECT o.order_id, u.name, p.name, o.quantity, o.total
 FROM fact_orders o
-JOIN dim_users u ON o.user_id = u.id
-JOIN dim_products p ON o.product_id = p.id;
+LEFT JOIN dim_users u ON o.user_id = u.id
+LEFT JOIN dim_products p ON o.product_id = p.id;
 ```
 
-Câu truy vấn trên trả về thông tin đơn hàng kèm tên người dùng và sản phẩm.
