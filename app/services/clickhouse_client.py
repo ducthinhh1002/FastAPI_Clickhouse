@@ -21,3 +21,43 @@ class ClickHouseClient:
             database=settings.CLICKHOUSE_DATABASE,
         )
 
+    def command(self, sql: str):
+        return self.client.command(sql)
+
+    def query(self, sql: str):
+        return self.client.query(sql)
+
+    def init_db(self):
+        self.command(
+            """
+            CREATE TABLE IF NOT EXISTS dim_users (
+                id UInt64,
+                name String,
+                email String
+            ) ENGINE = MergeTree()
+            ORDER BY id
+            """
+        )
+        self.command(
+            """
+            CREATE TABLE IF NOT EXISTS dim_products (
+                id UInt64,
+                name String
+            ) ENGINE = MergeTree()
+            ORDER BY id
+            """
+        )
+        self.command(
+            """
+            CREATE TABLE IF NOT EXISTS fact_orders (
+                order_id UInt64,
+                user_id UInt64,
+                product_id UInt64,
+                quantity UInt32,
+                total Float64,
+                order_date DateTime DEFAULT now()
+            ) ENGINE = MergeTree()
+            ORDER BY order_id
+            """
+        )
+
