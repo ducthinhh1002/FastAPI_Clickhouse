@@ -12,6 +12,12 @@ router = APIRouter(prefix="/products", tags=["products"])
 
 @router.post("/")
 async def create_product(product: Product, ch: ClickHouseClient = Depends(get_ch)):
+    # Check for existing ID to avoid duplicates
+    check_sql = "SELECT count() FROM dim_products WHERE id={id:UInt64}"
+    exists = ch.client.query(check_sql, parameters={"id": product.id}).result_rows[0][0]
+    if exists:
+        raise HTTPException(status_code=400, detail="Product with this id already exists")
+
     sql = "INSERT INTO dim_products (id, name) VALUES ({id:UInt64}, {name:String})"
     params = {"id": product.id, "name": product.name}
     ch.client.command(sql, parameters=params)
