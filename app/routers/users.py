@@ -12,6 +12,12 @@ router = APIRouter(prefix="/users", tags=["users"])
 
 @router.post("/")
 async def create_user(user: User, ch: ClickHouseClient = Depends(get_ch)):
+    # Check for existing ID to avoid duplicates
+    check_sql = "SELECT count() FROM dim_users WHERE id={id:UInt64}"
+    exists = ch.client.query(check_sql, parameters={"id": user.id}).result_rows[0][0]
+    if exists:
+        raise HTTPException(status_code=400, detail="User with this id already exists")
+
     sql = "INSERT INTO dim_users (id, name, email) VALUES ({id:UInt64}, {name:String}, {email:String})"
     params = {"id": user.id, "name": user.name, "email": user.email}
     ch.client.command(sql, parameters=params)

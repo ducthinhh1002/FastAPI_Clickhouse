@@ -12,6 +12,12 @@ router = APIRouter(prefix="/orders", tags=["orders"])
 
 @router.post("/")
 async def create_order(order: Order, ch: ClickHouseClient = Depends(get_ch)):
+    # Check for existing ID to avoid duplicates
+    check_sql = "SELECT count() FROM fact_orders WHERE order_id={order_id:UInt64}"
+    exists = ch.client.query(check_sql, parameters={"order_id": order.order_id}).result_rows[0][0]
+    if exists:
+        raise HTTPException(status_code=400, detail="Order with this id already exists")
+
     sql = (
         "INSERT INTO fact_orders (order_id, user_id, product_id, quantity, total) "
         "VALUES ({order_id:UInt64}, {user_id:UInt64}, {product_id:UInt64}, {quantity:UInt32}, {total:Float64})"
