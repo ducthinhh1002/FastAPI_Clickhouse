@@ -41,7 +41,7 @@ Tạo user mới:
 ```bash
 Invoke-RestMethod -Uri http://localhost:8000/users/ `
   -Method Post -ContentType 'application/json' `
-  -Body '{"id":1,"name":"Alice","email":"alice@example.com"}'
+  -Body '{"id":2,"name":"B","email":"alice@example.com"}'
 ```
 Lấy thông tin user:
 ```bash
@@ -91,7 +91,7 @@ Tạo đơn hàng mới:
 Invoke-RestMethod -Uri http://localhost:8000/orders/ `
   -Method POST `
   -ContentType "application/json" `
-  -Body '{"order_id":2,"user_id":1,"product_id":3,"quantity":5,"total":40}'
+  -Body '{"order_id":3,"user_id":2,"product_id":3,"quantity":3,"total":80}'
 ```
 Lấy thông tin đơn hàng:
 ```bash
