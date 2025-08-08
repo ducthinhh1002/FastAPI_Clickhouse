@@ -122,3 +122,25 @@ LEFT JOIN dim_users u ON o.user_id = u.id
 LEFT JOIN dim_products p ON o.product_id = p.id;
 ```
 
+### Thực thi truy vấn SQL động
+
+API cung cấp endpoint `/sql` để chạy bất kỳ câu lệnh nào tới ClickHouse với
+tham số động.  Điều này giúp bạn thao tác với các bảng tự định nghĩa thay vì
+chỉ các bảng mẫu trong ví dụ.
+
+Ví dụ thực thi truy vấn `SELECT`:
+
+```bash
+Invoke-RestMethod -Uri http://localhost:8000/sql/ `
+  -Method POST -ContentType 'application/json' `
+  -Body '{"sql":"SELECT count() FROM dim_users WHERE id={id:UInt64}","params":{"id":1},"is_select":true}'
+```
+
+Ví dụ thực thi lệnh `INSERT`:
+
+```bash
+Invoke-RestMethod -Uri http://localhost:8000/sql/ `
+  -Method POST -ContentType 'application/json' `
+  -Body '{"sql":"INSERT INTO dim_products (id, name) VALUES ({id:UInt64}, {name:String})","params":{"id":10,"name":"Pen"}}'
+```
+
