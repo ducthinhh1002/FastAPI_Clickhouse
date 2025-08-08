@@ -14,7 +14,7 @@ router = APIRouter(prefix="/orders", tags=["orders"])
 async def create_order(order: Order, ch: ClickHouseClient = Depends(get_ch)):
     # Check for existing ID to avoid duplicates
     check_sql = "SELECT count() FROM fact_orders WHERE order_id={order_id:UInt64}"
-    exists = ch.client.query(check_sql, parameters={"order_id": order.order_id}).result_rows[0][0]
+    exists = ch.query(check_sql, parameters={"order_id": order.order_id}).result_rows[0][0]
     if exists:
         raise HTTPException(status_code=400, detail="Order with this id already exists")
 
@@ -29,7 +29,7 @@ async def create_order(order: Order, ch: ClickHouseClient = Depends(get_ch)):
         "quantity": order.quantity,
         "total": order.total,
     }
-    ch.client.command(sql, parameters=params)
+    ch.command(sql, parameters=params)
     return {"status": "ok"}
 
 
@@ -40,7 +40,7 @@ async def read_order(order_id: int, ch: ClickHouseClient = Depends(get_ch)):
         "FROM fact_orders WHERE order_id = {order_id:UInt64}"
     )
     params = {"order_id": order_id}
-    result = ch.client.query(sql, parameters=params)
+    result = ch.query(sql, parameters=params)
     rows = result.result_rows
     if not rows:
         raise HTTPException(status_code=404, detail="Order not found")
@@ -68,7 +68,7 @@ async def update_order(order_id: int, order: Order, ch: ClickHouseClient = Depen
         "total": order.total,
         "order_id": order_id,
     }
-    ch.client.command(sql, parameters=params)
+    ch.command(sql, parameters=params)
     return {"status": "ok"}
 
 
@@ -76,5 +76,5 @@ async def update_order(order_id: int, order: Order, ch: ClickHouseClient = Depen
 async def delete_order(order_id: int, ch: ClickHouseClient = Depends(get_ch)):
     sql = "ALTER TABLE fact_orders DELETE WHERE order_id={order_id:UInt64}"
     params = {"order_id": order_id}
-    ch.client.command(sql, parameters=params)
+    ch.command(sql, parameters=params)
     return {"status": "ok"}

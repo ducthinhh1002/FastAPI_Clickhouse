@@ -14,13 +14,13 @@ router = APIRouter(prefix="/products", tags=["products"])
 async def create_product(product: Product, ch: ClickHouseClient = Depends(get_ch)):
     # Check for existing ID to avoid duplicates
     check_sql = "SELECT count() FROM dim_products WHERE id={id:UInt64}"
-    exists = ch.client.query(check_sql, parameters={"id": product.id}).result_rows[0][0]
+    exists = ch.query(check_sql, parameters={"id": product.id}).result_rows[0][0]
     if exists:
         raise HTTPException(status_code=400, detail="Product with this id already exists")
 
     sql = "INSERT INTO dim_products (id, name) VALUES ({id:UInt64}, {name:String})"
     params = {"id": product.id, "name": product.name}
-    ch.client.command(sql, parameters=params)
+    ch.command(sql, parameters=params)
     return {"status": "ok"}
 
 
@@ -28,7 +28,7 @@ async def create_product(product: Product, ch: ClickHouseClient = Depends(get_ch
 async def read_product(product_id: int, ch: ClickHouseClient = Depends(get_ch)):
     sql = "SELECT id, name FROM dim_products WHERE id = {product_id:UInt64}"
     params = {"product_id": product_id}
-    result = ch.client.query(sql, parameters=params)
+    result = ch.query(sql, parameters=params)
     rows = result.result_rows
     if not rows:
         raise HTTPException(status_code=404, detail="Product not found")
@@ -40,7 +40,7 @@ async def read_product(product_id: int, ch: ClickHouseClient = Depends(get_ch)):
 async def update_product(product_id: int, product: Product, ch: ClickHouseClient = Depends(get_ch)):
     sql = "ALTER TABLE dim_products UPDATE name={name:String} WHERE id={product_id:UInt64}"
     params = {"name": product.name, "product_id": product_id}
-    ch.client.command(sql, parameters=params)
+    ch.command(sql, parameters=params)
     return {"status": "ok"}
 
 
@@ -48,5 +48,5 @@ async def update_product(product_id: int, product: Product, ch: ClickHouseClient
 async def delete_product(product_id: int, ch: ClickHouseClient = Depends(get_ch)):
     sql = "ALTER TABLE dim_products DELETE WHERE id={product_id:UInt64}"
     params = {"product_id": product_id}
-    ch.client.command(sql, parameters=params)
+    ch.command(sql, parameters=params)
     return {"status": "ok"}

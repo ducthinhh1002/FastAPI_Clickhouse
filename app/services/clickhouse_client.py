@@ -21,11 +21,18 @@ class ClickHouseClient:
             database=settings.CLICKHOUSE_DATABASE,
         )
 
-    def command(self, sql: str):
-        return self.client.command(sql)
+    def command(self, sql: str, parameters: dict | None = None):
+        """Execute a non-select statement.
 
-    def query(self, sql: str):
-        return self.client.query(sql)
+        Parameters can be passed in to dynamically substitute values in the
+        query.  This allows the API layer to work with arbitrary statements
+        without string formatting.
+        """
+        return self.client.command(sql, parameters=parameters or {})
+
+    def query(self, sql: str, parameters: dict | None = None):
+        """Execute a select statement and return the raw ClickHouse result."""
+        return self.client.query(sql, parameters=parameters or {})
 
     def init_db(self):
         self.command(
