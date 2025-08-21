@@ -1,18 +1,22 @@
+"""Client tiện ích để kết nối và thao tác với ClickHouse."""
+
 from clickhouse_connect import get_client
 from app.core.config import settings
 import backoff
-import logging
-
-logger = logging.getLogger(__name__)
+from loguru import logger
 
 
 class ClickHouseClient:
+    """Bao bọc client ClickHouse và cung cấp các phương thức tiện ích."""
+
     def __init__(self):
+        """Khởi tạo kết nối tới ClickHouse."""
         self.client = self._connect()
 
     @backoff.on_exception(backoff.expo, Exception, max_time=20, jitter=None)
     def _connect(self):
-        logger.info("Connecting to ClickHouse")
+        """Tạo kết nối tới máy chủ ClickHouse."""
+        logger.info("Kết nối tới ClickHouse")
         return get_client(
             host=settings.CLICKHOUSE_HOST,
             port=settings.CLICKHOUSE_PORT,
@@ -22,19 +26,27 @@ class ClickHouseClient:
         )
 
     def command(self, sql: str, parameters: dict | None = None):
-        """Execute a non-select statement.
+        """Thực thi câu lệnh không phải ``SELECT``.
 
-        Parameters can be passed in to dynamically substitute values in the
-        query.  This allows the API layer to work with arbitrary statements
-        without string formatting.
+        Tham số có thể truyền vào để thay thế động trong truy vấn, giúp API
+        hoạt động với các câu lệnh tùy ý mà không cần định dạng chuỗi.
         """
-        return self.client.command(sql, parameters=parameters or {})
+        try:
+            return self.client.command(sql, parameters=parameters or {})
+        except Exception as exc:
+            logger.exception("Lỗi khi thực thi command: {}", exc)
+            raise
 
     def query(self, sql: str, parameters: dict | None = None):
-        """Execute a select statement and return the raw ClickHouse result."""
-        return self.client.query(sql, parameters=parameters or {})
+        """Thực thi câu lệnh ``SELECT`` và trả về kết quả thô từ ClickHouse."""
+        try:
+            return self.client.query(sql, parameters=parameters or {})
+        except Exception as exc:
+            logger.exception("Lỗi khi thực thi query: {}", exc)
+            raise
 
     def init_db(self):
+        """Khởi tạo các bảng cần thiết nếu chưa tồn tại."""
         self.command(
             """
             CREATE TABLE IF NOT EXISTS dim_users (
