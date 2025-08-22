@@ -101,4 +101,13 @@ class ClickHouseClient:
             ORDER BY order_id
             """
         )
+        self.command(
+            """
+            CREATE TABLE IF NOT EXISTS users_auth (
+                username String,
+                password_hash String
+            ) ENGINE = MergeTree()
+            ORDER BY username
+            """
+        )
 
