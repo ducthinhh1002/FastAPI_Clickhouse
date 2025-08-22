@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from loguru import logger
-from app.routers import auth, users, products, orders, dynamic
+from app.routers import auth, users, products, orders, dynamic, crud
 from app.services.clickhouse_client import ClickHouseClient
 
 @asynccontextmanager
@@ -22,6 +22,7 @@ app.include_router(users.router)
 app.include_router(products.router)
 app.include_router(orders.router)
 app.include_router(dynamic.router)
+app.include_router(crud.router)
 
 @app.get("/")
 async def root():
