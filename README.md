@@ -144,3 +144,45 @@ Invoke-RestMethod -Uri http://localhost:8000/sql/ `
   -Body '{"sql":"INSERT INTO dim_products (id, name) VALUES ({id:UInt64}, {name:String})","params":{"id":10,"name":"Pen"}}'
 ```
 
+### CRUD động theo schema
+
+Router `/crud` cho phép thao tác với bất kỳ bảng nào bằng cách tự lấy schema từ
+ClickHouse, giúp giảm công viết API cho mỗi bảng mới.
+
+Tạo bản ghi mới:
+
+```bash
+Invoke-RestMethod -Uri http://localhost:8000/crud/dim_users `
+  -Method POST -ContentType 'application/json' `
+  -Body '{"id":5,"name":"User5","email":"user5@example.com"}'
+```
+
+Đọc bản ghi:
+
+```bash
+Invoke-RestMethod -Uri "http://localhost:8000/crud/dim_users/5" `
+  -Method GET
+```
+
+Cập nhật bản ghi:
+
+```bash
+Invoke-RestMethod -Uri http://localhost:8000/crud/dim_users/5 `
+  -Method PUT -ContentType 'application/json' `
+  -Body '{"name":"User5 Updated"}'
+```
+
+Xóa bản ghi:
+
+```bash
+Invoke-RestMethod -Uri "http://localhost:8000/crud/dim_users/5" `
+  -Method DELETE
+```
+
+Nếu bảng dùng khóa khác `id`, truyền tên cột qua tham số `id_column`:
+
+```bash
+Invoke-RestMethod -Uri "http://localhost:8000/crud/fact_orders/1?id_column=order_id" `
+  -Method GET
+```
+
