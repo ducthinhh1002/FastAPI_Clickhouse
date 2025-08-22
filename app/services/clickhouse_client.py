@@ -66,6 +66,19 @@ class ClickHouseClient:
             ORDER BY id
             """
         )
+        # Seed sample users so example queries return data
+        result = self.query("SELECT count() FROM dim_users")
+        if result.first_item == 0:
+            self.command(
+                """
+                INSERT INTO dim_users (id, name, email) VALUES
+                    (1, 'User 1', 'user1@example.com'),
+                    (2, 'User 2', 'user2@example.com'),
+                    (3, 'User 3', 'user3@example.com'),
+                    (4, 'User 4', 'user4@example.com'),
+                    (5, 'User 5', 'user5@example.com')
+                """
+            )
         self.command(
             """
             CREATE TABLE IF NOT EXISTS dim_products (
