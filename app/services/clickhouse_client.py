@@ -45,6 +45,15 @@ class ClickHouseClient:
             logger.exception("Lỗi khi thực thi query: {}", exc)
             raise
 
+    def get_table_schema(self, table: str) -> list[tuple[str, str]]:
+        """Lấy danh sách cột và kiểu dữ liệu của một bảng."""
+        try:
+            result = self.query(f"DESCRIBE TABLE {table}")
+            return [(row[0], row[1]) for row in result.result_rows]
+        except Exception as exc:
+            logger.exception("Không thể lấy schema cho bảng {}: {}", table, exc)
+            raise
+
     def init_db(self):
         """Khởi tạo các bảng cần thiết nếu chưa tồn tại."""
         self.command(
