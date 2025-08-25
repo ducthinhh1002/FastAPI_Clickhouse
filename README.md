@@ -14,6 +14,12 @@ python scripts/upload_parquet_minio.py --bucket test --object data10m.parquet --
 python scripts/generate_parquet.py --rows 10000000 --cols 10 --output data10m.parquet
 ```
 
+## Simple frontend
+
+A minimal HTML page is served at `/frontend` that lets you query any table via
+the dynamic CRUD endpoint.  Enter a table name and row id and the page will
+display the JSON response returned by the API.
+
 ## Check downtime: 
 ```bash
 while ($true) {

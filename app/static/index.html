@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>FastAPI ClickHouse Demo</title>
+</head>
+<body>
+    <h1>Query Table</h1>
+    <form id="query-form">
+        <label>Table: <input type="text" id="table" required></label>
+        <label>ID: <input type="text" id="itemId" required></label>
+        <button type="submit">Fetch</button>
+    </form>
+    <pre id="result"></pre>
+    <script>
+        document.getElementById('query-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const table = document.getElementById('table').value;
+            const id = document.getElementById('itemId').value;
+            const resultEl = document.getElementById('result');
+            resultEl.textContent = 'Loading...';
+            try {
+                const res = await fetch(`/crud/${table}/${id}`);
+                if (!res.ok) {
+                    const text = await res.text();
+                    resultEl.textContent = `Error ${res.status}: ${text}`;
+                    return;
+                }
+                const data = await res.json();
+                resultEl.textContent = JSON.stringify(data, null, 2);
+            } catch (err) {
+                resultEl.textContent = err.toString();
+            }
+        });
+    </script>
+</body>
+</html>
