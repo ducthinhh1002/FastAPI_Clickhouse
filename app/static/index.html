@@ -33,7 +33,8 @@
 
         document.getElementById('query-form').addEventListener('submit', async function(e) {
             e.preventDefault();
-            const table = document.getElementById('table').value;
+            const table = document.getElementById('table').value.trim();
+
             const params = new URLSearchParams();
             document.querySelectorAll('#filters .filter').forEach(f => {
                 const field = f.querySelector('.field').value.trim();
@@ -44,7 +45,11 @@
             const resultEl = document.getElementById('result');
             resultEl.textContent = 'Loading...';
             try {
-                const res = await fetch(`/crud/${table}${query ? '?' + query : ''}`);
+                const res = await fetch(
+                    `/crud/${encodeURIComponent(table)}${query ? '?' + query : ''}`,
+                    { method: 'GET' }
+                );
+
                 if (!res.ok) {
                     const text = await res.text();
                     resultEl.textContent = `Error ${res.status}: ${text}`;
