@@ -16,9 +16,17 @@ python scripts/generate_parquet.py --rows 10000000 --cols 10 --output data10m.pa
 
 ## Simple frontend
 
-A minimal HTML page is served at `/frontend` that lets you query any table via
-the dynamic CRUD endpoint.  Enter a table name and row id and the page will
-display the JSON response returned by the API.
+Trang HTML đơn giản được phục vụ tại `/frontend` cho phép bạn truy vấn bất kỳ
+bảng nào thông qua endpoint CRUD động.
+
+### Hướng dẫn sử dụng
+1. Mở trình duyệt truy cập `http://localhost:8000/frontend`.
+2. Nhập tên bảng vào ô **Table**.
+3. (Tuỳ chọn) Chọn hàm tổng hợp và cột cần tính ở phần **Function** và
+   **Aggregate Column**. Có thể nhập cột **Group By** để nhóm kết quả.
+4. (Tuỳ chọn) Thêm bộ lọc bằng nút **Add Filter**, mỗi bộ lọc gồm cột và giá trị
+   cần so khớp. Có thể thêm nhiều bộ lọc.
+5. Nhấn **Fetch** để gửi yêu cầu; kết quả JSON sẽ hiển thị ở khung bên dưới.
 
 ## Check downtime: 
 ```bash
