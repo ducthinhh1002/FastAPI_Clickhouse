@@ -9,7 +9,8 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "my-secret-key"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-    CLICKHOUSE_HOST: str = "clickhouse"
+    # Mặc định trỏ tới máy cục bộ để tránh lỗi không resolve được DNS
+    CLICKHOUSE_HOST: str = "localhost"
     CLICKHOUSE_PORT: int = 8123
     CLICKHOUSE_USER: str = "admin"
     CLICKHOUSE_PASSWORD: str = "password"
