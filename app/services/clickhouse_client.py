@@ -18,13 +18,30 @@ class ClickHouseClient:
     def _connect(self):
         """Tạo kết nối tới máy chủ ClickHouse."""
         logger.info("Kết nối tới ClickHouse")
-        return get_client(
-            host=settings.CLICKHOUSE_HOST,
-            port=settings.CLICKHOUSE_PORT,
-            username=settings.CLICKHOUSE_USER,
-            password=settings.CLICKHOUSE_PASSWORD,
-            database=settings.CLICKHOUSE_DATABASE,
-        )
+        try:
+            return get_client(
+                host=settings.CLICKHOUSE_HOST,
+                port=settings.CLICKHOUSE_PORT,
+                username=settings.CLICKHOUSE_USER,
+                password=settings.CLICKHOUSE_PASSWORD,
+                database=settings.CLICKHOUSE_DATABASE,
+            )
+        except Exception as exc:
+            logger.warning(
+                "Không thể kết nối tới host {}: {}",
+                settings.CLICKHOUSE_HOST,
+                exc,
+            )
+            if settings.CLICKHOUSE_HOST != "localhost":
+                logger.info("Thử kết nối tới localhost")
+                return get_client(
+                    host="localhost",
+                    port=settings.CLICKHOUSE_PORT,
+                    username=settings.CLICKHOUSE_USER,
+                    password=settings.CLICKHOUSE_PASSWORD,
+                    database=settings.CLICKHOUSE_DATABASE,
+                )
+            raise
 
     def command(self, sql: str, parameters: Optional[Dict] = None):
         """Thực thi câu lệnh không phải ``SELECT``.
