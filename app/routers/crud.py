@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, Request, HTTPException
-from typing import Any, Dict
+from typing import Any, Dict, List
 from loguru import logger
 from app.services.clickhouse_client import ClickHouseClient
 
@@ -71,15 +71,50 @@ async def query_rows(table: str, request: Request, ch: ClickHouseClient = Depend
     try:
         columns, schema = _schema_dict(ch, table)
         filters: Dict[str, Any] = {}
+        aggregate = request.query_params.get("aggregate")
+        group_by = request.query_params.get("group_by")
         for key, value in request.query_params.items():
+            if key in {"aggregate", "group_by"}:
+                continue
             if key not in schema:
                 raise HTTPException(status_code=400, detail=f"Invalid filter column: {key}")
             filters[key] = _cast_value(value, schema[key])
-        sql = f"SELECT * FROM {table}"
+
+        sql = "SELECT "
+        agg_alias = None
+        group_cols: List[str] = []
+        if aggregate:
+            parts = aggregate.split(":")
+            if len(parts) != 2:
+                raise HTTPException(status_code=400, detail="Invalid aggregate format")
+            func, col = parts[0].upper(), parts[1]
+            if col not in schema:
+                raise HTTPException(status_code=400, detail="Invalid aggregate column")
+            agg_alias = f"{func.lower()}_{col}"
+            sql += f"{func}({col}) AS {agg_alias}"
+            if group_by:
+                group_cols = [c.strip() for c in group_by.split(",") if c.strip()]
+                invalid = [c for c in group_cols if c not in schema]
+                if invalid:
+                    raise HTTPException(status_code=400, detail=f"Invalid group_by column: {', '.join(invalid)}")
+                sql += ", " + ", ".join(group_cols)
+            sql += f" FROM {table}"
+        else:
+            sql += f"* FROM {table}"
+
         if filters:
             conditions = " AND ".join([f"{k}={{{k}:{schema[k]}}}" for k in filters])
             sql += f" WHERE {conditions}"
+        if aggregate and group_cols:
+            sql += f" GROUP BY {', '.join(group_cols)}"
+
         result = ch.query(sql, parameters=filters)
+        if aggregate:
+            col_names = [agg_alias] + group_cols
+            return [
+                {col_names[idx]: row[idx] for idx in range(len(col_names))}
+                for row in result.result_rows
+            ]
         return [
             {col: row[idx] for idx, (col, _) in enumerate(columns)}
             for row in result.result_rows

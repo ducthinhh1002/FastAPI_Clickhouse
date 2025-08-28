@@ -57,6 +57,9 @@
         function App() {
             const [table, setTable] = useState('');
             const [filters, setFilters] = useState([{ field: '', value: '' }]);
+            const [aggFunc, setAggFunc] = useState('');
+            const [aggField, setAggField] = useState('');
+            const [groupBy, setGroupBy] = useState('');
             const [result, setResult] = useState('');
 
             const updateFilter = (index, key, value) => {
@@ -76,6 +79,12 @@
                     const value = f.value.trim();
                     if (field) params.append(field, value);
                 });
+                if (aggFunc && aggField) {
+                    params.append('aggregate', `${aggFunc}:${aggField}`);
+                }
+                if (groupBy) {
+                    params.append('group_by', groupBy);
+                }
                 const query = params.toString();
                 setResult('Loading...');
                 try {
@@ -104,6 +113,30 @@
                             <label style={{flex: 1}}>
                                 Table:
                                 <input value={table} onChange={e => setTable(e.target.value)} required />
+                            </label>
+                        </div>
+                        <div className="filter">
+                            <label>
+                                Function:
+                                <select value={aggFunc} onChange={e => setAggFunc(e.target.value)}>
+                                    <option value="">None</option>
+                                    <option value="count">COUNT</option>
+                                    <option value="sum">SUM</option>
+                                    <option value="avg">AVG</option>
+                                    <option value="min">MIN</option>
+                                    <option value="max">MAX</option>
+                                </select>
+                            </label>
+                            <input
+                                placeholder="Aggregate Column"
+                                value={aggField}
+                                onChange={e => setAggField(e.target.value)}
+                            />
+                        </div>
+                        <div className="filter">
+                            <label style={{flex: 1}}>
+                                Group By:
+                                <input value={groupBy} onChange={e => setGroupBy(e.target.value)} />
                             </label>
                         </div>
                         {filters.map((f, idx) => (
