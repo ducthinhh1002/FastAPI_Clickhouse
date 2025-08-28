@@ -4,6 +4,7 @@ from clickhouse_connect import get_client
 from app.core.config import settings
 import backoff
 from loguru import logger
+from typing import Optional, Dict, List, Tuple, Any
 
 
 class ClickHouseClient:
@@ -25,7 +26,7 @@ class ClickHouseClient:
             database=settings.CLICKHOUSE_DATABASE,
         )
 
-    def command(self, sql: str, parameters: dict | None = None):
+    def command(self, sql: str, parameters: Optional[Dict] = None):
         """Thực thi câu lệnh không phải ``SELECT``.
 
         Tham số có thể truyền vào để thay thế động trong truy vấn, giúp API
@@ -37,7 +38,7 @@ class ClickHouseClient:
             logger.exception("Lỗi khi thực thi command: {}", exc)
             raise
 
-    def query(self, sql: str, parameters: dict | None = None):
+    def query(self, sql: str, parameters: Optional[Dict] = None):
         """Thực thi câu lệnh ``SELECT`` và trả về kết quả thô từ ClickHouse."""
         try:
             return self.client.query(sql, parameters=parameters or {})
@@ -45,7 +46,7 @@ class ClickHouseClient:
             logger.exception("Lỗi khi thực thi query: {}", exc)
             raise
 
-    def get_table_schema(self, table: str) -> list[tuple[str, str]]:
+    def get_table_schema(self, table: str) -> List[Tuple[str, str]]:
         """Lấy danh sách cột và kiểu dữ liệu của một bảng."""
         try:
             result = self.query(f"DESCRIBE TABLE {table}")
@@ -101,4 +102,3 @@ class ClickHouseClient:
             ORDER BY order_id
             """
         )
-

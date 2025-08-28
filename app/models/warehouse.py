@@ -2,7 +2,8 @@
 
 from pydantic import BaseModel
 from datetime import datetime
-
+from typing import Optional, Union
+from pydantic import BaseModel
 
 class User(BaseModel):
     """Thông tin người dùng."""
@@ -27,4 +28,5 @@ class Order(BaseModel):
     product_id: int
     quantity: int
     total: float
-    order_date: datetime | None = None
+    order_date: Optional[datetime] = None
+
