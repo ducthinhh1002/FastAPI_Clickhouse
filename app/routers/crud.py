@@ -65,6 +65,32 @@ async def create_row(table: str, data: Dict[str, Any], ch: ClickHouseClient = De
         raise HTTPException(status_code=500, detail="Lỗi máy chủ")
 
 
+@router.get("/{table}")
+async def query_rows(table: str, request: Request, ch: ClickHouseClient = Depends(get_ch)):
+    """Truy vấn các bản ghi với bộ lọc linh hoạt."""
+    try:
+        columns, schema = _schema_dict(ch, table)
+        filters: Dict[str, Any] = {}
+        for key, value in request.query_params.items():
+            if key not in schema:
+                raise HTTPException(status_code=400, detail=f"Invalid filter column: {key}")
+            filters[key] = _cast_value(value, schema[key])
+        sql = f"SELECT * FROM {table}"
+        if filters:
+            conditions = " AND ".join([f"{k}={{{k}:{schema[k]}}}" for k in filters])
+            sql += f" WHERE {conditions}"
+        result = ch.query(sql, parameters=filters)
+        return [
+            {col: row[idx] for idx, (col, _) in enumerate(columns)}
+            for row in result.result_rows
+        ]
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("Lỗi truy vấn bảng {}: {}", table, exc)
+        raise HTTPException(status_code=500, detail="Lỗi máy chủ")
+
+
 @router.get("/{table}/{item_id}")
 async def read_row(table: str, item_id: str, id_column: str = "id", ch: ClickHouseClient = Depends(get_ch)):
     """Đọc một bản ghi theo khóa chính."""
