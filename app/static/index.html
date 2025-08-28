@@ -8,19 +8,46 @@
     <h1>Query Table</h1>
     <form id="query-form">
         <label>Table: <input type="text" id="table" required></label>
-        <label>ID: <input type="text" id="itemId" required></label>
+        <div id="filters"></div>
+        <button type="button" id="add-filter">Add Filter</button>
         <button type="submit">Fetch</button>
     </form>
     <pre id="result"></pre>
     <script>
+        function addFilter() {
+            const div = document.createElement('div');
+            div.className = 'filter';
+            div.innerHTML = `
+                <input type="text" class="field" placeholder="Column">
+                <input type="text" class="value" placeholder="Value">
+                <button type="button" class="remove">Remove</button>`;
+            document.getElementById('filters').appendChild(div);
+        }
+
+        document.getElementById('add-filter').addEventListener('click', addFilter);
+        document.getElementById('filters').addEventListener('click', function(e) {
+            if (e.target.classList.contains('remove')) {
+                e.target.parentElement.remove();
+            }
+        });
+
         document.getElementById('query-form').addEventListener('submit', async function(e) {
             e.preventDefault();
-            const table = document.getElementById('table').value;
-            const id = document.getElementById('itemId').value;
+            const table = document.getElementById('table').value.trim();
+            const params = new URLSearchParams();
+            document.querySelectorAll('#filters .filter').forEach(f => {
+                const field = f.querySelector('.field').value.trim();
+                const value = f.querySelector('.value').value.trim();
+                if (field) params.append(field, value);
+            });
+            const query = params.toString();
             const resultEl = document.getElementById('result');
             resultEl.textContent = 'Loading...';
             try {
-                const res = await fetch(`/crud/${table}/${id}`);
+                const res = await fetch(
+                    `/crud/${encodeURIComponent(table)}${query ? '?' + query : ''}`,
+                    { method: 'GET' }
+                );
                 if (!res.ok) {
                     const text = await res.text();
                     resultEl.textContent = `Error ${res.status}: ${text}`;
