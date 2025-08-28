@@ -24,6 +24,9 @@ def _schema_dict(
         raise
     except Exception as exc:
         logger.exception("Lỗi lấy schema bảng {}: {}", table, exc)
+        message = str(exc).lower()
+        if "doesn't exist" in message or "unknown table" in message:
+            raise HTTPException(status_code=404, detail="Bảng không tồn tại")
         raise HTTPException(status_code=500, detail="Lỗi máy chủ")
 
 
