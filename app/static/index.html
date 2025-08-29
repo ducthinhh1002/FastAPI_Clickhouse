@@ -52,15 +52,58 @@
 <body>
     <div id="root"></div>
     <script type="text/babel">
-        const { useState } = React;
+        const { useState, useEffect } = React;
 
         function App() {
+            const [tables, setTables] = useState([]);
+            const [columns, setColumns] = useState([]);
             const [table, setTable] = useState('');
             const [filters, setFilters] = useState([{ field: '', value: '' }]);
             const [aggFunc, setAggFunc] = useState('');
             const [aggField, setAggField] = useState('');
             const [groupBy, setGroupBy] = useState('');
             const [result, setResult] = useState('');
+
+            useEffect(() => {
+                async function loadTables() {
+                    try {
+                        const res = await fetch('/sql/', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ sql: 'SHOW TABLES', is_select: true })
+                        });
+                        const data = await res.json();
+                        setTables(data.rows.map(r => r[0]));
+                    } catch (err) {
+                        console.error(err);
+                    }
+                }
+                loadTables();
+            }, []);
+
+            useEffect(() => {
+                if (!table) {
+                    setColumns([]);
+                    return;
+                }
+                async function loadColumns() {
+                    try {
+                        const res = await fetch('/sql/', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ sql: `DESCRIBE TABLE ${table}`, is_select: true })
+                        });
+                        const data = await res.json();
+                        setColumns(data.rows.map(r => r[0]));
+                        setFilters([{ field: '', value: '' }]);
+                        setAggField('');
+                        setGroupBy('');
+                    } catch (err) {
+                        console.error(err);
+                    }
+                }
+                loadColumns();
+            }, [table]);
 
             const updateFilter = (index, key, value) => {
                 const updated = filters.slice();
@@ -112,7 +155,12 @@
                         <div className="filter">
                             <label style={{flex: 1}}>
                                 Table:
-                                <input value={table} onChange={e => setTable(e.target.value)} required />
+                                <select value={table} onChange={e => setTable(e.target.value)} required>
+                                    <option value="">Select table</option>
+                                    {tables.map(t => (
+                                        <option key={t} value={t}>{t}</option>
+                                    ))}
+                                </select>
                             </label>
                         </div>
                         <div className="filter">
@@ -127,25 +175,35 @@
                                     <option value="max">MAX</option>
                                 </select>
                             </label>
-                            <input
-                                placeholder="Aggregate Column"
-                                value={aggField}
-                                onChange={e => setAggField(e.target.value)}
-                            />
+                            <select value={aggField} onChange={e => setAggField(e.target.value)}>
+                                <option value="">Aggregate Column</option>
+                                {columns.map(c => (
+                                    <option key={c} value={c}>{c}</option>
+                                ))}
+                            </select>
                         </div>
                         <div className="filter">
                             <label style={{flex: 1}}>
                                 Group By:
-                                <input value={groupBy} onChange={e => setGroupBy(e.target.value)} />
+                                <select value={groupBy} onChange={e => setGroupBy(e.target.value)}>
+                                    <option value="">None</option>
+                                    {columns.map(c => (
+                                        <option key={c} value={c}>{c}</option>
+                                    ))}
+                                </select>
                             </label>
                         </div>
                         {filters.map((f, idx) => (
                             <div className="filter" key={idx}>
-                                <input
-                                    placeholder="Column"
+                                <select
                                     value={f.field}
                                     onChange={e => updateFilter(idx, 'field', e.target.value)}
-                                />
+                                >
+                                    <option value="">Column</option>
+                                    {columns.map(c => (
+                                        <option key={c} value={c}>{c}</option>
+                                    ))}
+                                </select>
                                 <input
                                     placeholder="Value"
                                     value={f.value}
