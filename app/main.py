@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
@@ -34,10 +34,26 @@ app.include_router(crud.router)
 
 @app.get("/frontend")
 async def frontend() -> FileResponse:
-    """Render simple frontend page."""
-    return FileResponse(BASE_DIR / "static" / "index.html")
+    """Render simple frontend page.
+
+    Trả về trang HTML đơn giản cho người dùng frontend.
+    """
+    try:
+        logger.info("Phục vụ trang frontend")
+        return FileResponse(BASE_DIR / "static" / "index.html")
+    except Exception as exc:
+        logger.exception("Không thể phục vụ trang frontend: {}", exc)
+        raise HTTPException(status_code=500, detail="Frontend not available")
 
 @app.get("/")
 async def root():
-    """API kiểm tra trạng thái."""
-    return {"message": "FastAPI ClickHouse API"}
+    """API kiểm tra trạng thái.
+
+    Trả về thông điệp đơn giản để kiểm tra hoạt động của dịch vụ.
+    """
+    try:
+        logger.debug("Endpoint root được gọi")
+        return {"message": "FastAPI ClickHouse API"}
+    except Exception as exc:
+        logger.exception("Lỗi tại endpoint root: {}", exc)
+        raise HTTPException(status_code=500, detail="Internal Server Error")

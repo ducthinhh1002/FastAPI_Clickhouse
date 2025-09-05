@@ -74,48 +74,54 @@ class ClickHouseClient:
 
     def init_db(self):
         """Khởi tạo các bảng cần thiết nếu chưa tồn tại."""
-        self.command(
-            """
-            CREATE TABLE IF NOT EXISTS dim_users (
-                id UInt64,
-                name String,
-                email String
-            ) ENGINE = MergeTree()
-            ORDER BY id
-            """
-        )
-        # Seed sample users so example queries return data
-        result = self.query("SELECT count() FROM dim_users")
-        if result.first_item == 0:
+        try:
+            logger.info("Khởi tạo cơ sở dữ liệu ClickHouse")
             self.command(
                 """
-                INSERT INTO dim_users (id, name, email) VALUES
-                    (1, 'User 1', 'user1@example.com'),
-                    (2, 'User 2', 'user2@example.com'),
-                    (3, 'User 3', 'user3@example.com'),
-                    (4, 'User 4', 'user4@example.com'),
-                    (5, 'User 5', 'user5@example.com')
+                CREATE TABLE IF NOT EXISTS dim_users (
+                    id UInt64,
+                    name String,
+                    email String
+                ) ENGINE = MergeTree()
+                ORDER BY id
                 """
             )
-        self.command(
-            """
-            CREATE TABLE IF NOT EXISTS dim_products (
-                id UInt64,
-                name String
-            ) ENGINE = MergeTree()
-            ORDER BY id
-            """
-        )
-        self.command(
-            """
-            CREATE TABLE IF NOT EXISTS fact_orders (
-                order_id UInt64,
-                user_id UInt64,
-                product_id UInt64,
-                quantity UInt32,
-                total Float64,
-                order_date DateTime DEFAULT now()
-            ) ENGINE = MergeTree()
-            ORDER BY order_id
-            """
-        )
+            # Seed sample users so example queries return data
+            result = self.query("SELECT count() FROM dim_users")
+            if result.first_item == 0:
+                self.command(
+                    """
+                    INSERT INTO dim_users (id, name, email) VALUES
+                        (1, 'User 1', 'user1@example.com'),
+                        (2, 'User 2', 'user2@example.com'),
+                        (3, 'User 3', 'user3@example.com'),
+                        (4, 'User 4', 'user4@example.com'),
+                        (5, 'User 5', 'user5@example.com')
+                    """
+                )
+            self.command(
+                """
+                CREATE TABLE IF NOT EXISTS dim_products (
+                    id UInt64,
+                    name String
+                ) ENGINE = MergeTree()
+                ORDER BY id
+                """
+            )
+            self.command(
+                """
+                CREATE TABLE IF NOT EXISTS fact_orders (
+                    order_id UInt64,
+                    user_id UInt64,
+                    product_id UInt64,
+                    quantity UInt32,
+                    total Float64,
+                    order_date DateTime DEFAULT now()
+                ) ENGINE = MergeTree()
+                ORDER BY order_id
+                """
+            )
+            logger.info("Khởi tạo cơ sở dữ liệu hoàn tất")
+        except Exception as exc:
+            logger.exception("Lỗi khởi tạo cơ sở dữ liệu: {}", exc)
+            raise
