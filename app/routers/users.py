@@ -5,8 +5,21 @@ from app.services.clickhouse_client import ClickHouseClient
 
 
 def get_ch(request: Request) -> ClickHouseClient:
-    """Lấy đối tượng ClickHouseClient từ ứng dụng."""
-    return request.app.state.clickhouse
+    """Lấy đối tượng ClickHouseClient từ ứng dụng.
+
+    Raises:
+        HTTPException: Nếu client chưa được khởi tạo.
+    """
+    try:
+        client = request.app.state.clickhouse
+        if client is None:
+            raise AttributeError("ClickHouse client is None")
+        return client
+    except AttributeError as exc:
+        logger.exception("Không tìm thấy ClickHouseClient: {}", exc)
+        raise HTTPException(
+            status_code=500, detail="ClickHouse client is not configured"
+        )
 
 
 router = APIRouter(prefix="/users", tags=["users"])
